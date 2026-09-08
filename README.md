@@ -1,23 +1,82 @@
 # Classroom Schedule
 
-A period timer for a classroom projector. Pick your school's bell schedule, name
-your periods once, and the screen shows what is happening now and how much time
-is left in it.
+A period timer for a classroom TV. Pick your school's bell schedule, name your
+periods once, and the screen shows what is happening now, how much time is left
+in it, and rings a warning alarm before each period ends.
 
-No build step, no dependencies, no server — open `index.html` or host the folder
-anywhere static (GitHub Pages works as-is).
+No build step, no dependencies, no network — open `index.html` or host the folder
+anywhere static (GitHub Pages works as-is). The alarm sounds are generated in the
+browser, so nothing has to load for the bell to ring.
 
 ## How it works
 
 1. **Choose a bell schedule.** Six are built in (see below).
-2. **Name your periods.** One text field per teaching block — "Algebra I",
-   "ELA / Morning Meeting", whatever you call it. Blank fields keep the default
-   name. Recess and lunch are fixed.
+2. **Name your periods and pick an alarm.** One text field per teaching block —
+   "Algebra I", "ELA / Morning Meeting", whatever you call it. Blank fields keep
+   the default name; recess and lunch are fixed. Then choose a warning sound,
+   how early it rings, and how loud.
 3. **Watch the clock.** The live screen shows the current period, a countdown to
    the bell, a progress bar, what is next, and the whole day at a glance.
 
-Your choice and your period names are saved in `localStorage`, so the site comes
-straight back to the live screen next time. It is per-device and per-browser —
+## The warning alarm
+
+Five minutes before each teaching period ends, the alarm rings once and the
+countdown turns red — enough warning to start wrapping up. Recess, lunch, and
+passing periods do not trigger it.
+
+Seven sounds are built in, each previewable on the setup screen:
+
+| Sound | Character |
+| --- | --- |
+| Chime | Three soft bell tones. Carries without startling anyone. |
+| School bell | The classic ring. Loud and unmistakable across a room. |
+| Marimba | Warm wooden mallets walking up a scale. |
+| Digital beeps | Four crisp electronic tones. Cuts through noise. |
+| Gentle rise | A quiet two-note swell. Good for a calm room or a test. |
+| Low gong | One deep, long note. The least jarring option. |
+| Triple tap | Three short wood-block knocks. Brief and easy to ignore. |
+
+The lead time can be 1, 2, 3, 5, or 10 minutes; volume is a slider. **Mute** on
+the live screen silences it without losing the settings.
+
+It rings on the tick that crosses the line, so it fires once per period — and
+loading the page in the middle of a period that is already inside the warning
+window stays silent rather than ringing late.
+
+### If the alarm stays quiet
+
+Browsers refuse to play audio until someone interacts with the page, so a TV
+that reloaded overnight starts muted. When that happens the live screen shows a
+**Turn on sound** bar — one click (or any button press on the remote) is enough,
+and the alarm then works for the rest of the session. Pressing **Save & start**
+during setup already counts, so a normal run-through never hits this.
+
+## Putting it on a TV
+
+The live screen is built for a 10-foot read: at 1080p the countdown is about 220
+pixels tall, and the layout puts the day's schedule in a column beside it. It
+sizes itself from the viewport, so 720p, 1080p, a projector, or a phone all work
+without settings.
+
+- **Full screen** hides the browser chrome. `F` does the same from a keyboard or
+  a remote with a keyboard.
+- The page asks for a screen wake lock so the TV does not sleep on it. That
+  needs a real `http(s)` origin — it is ignored when opened as a `file://` URL.
+- Edges are padded well inside the frame so nothing lands in a TV's overscan.
+- The schedule column scrolls itself and keeps the current period centred, so a
+  long day needs no attention.
+- Everything is reachable with a remote's D-pad; focused controls get a heavy
+  outline.
+
+### Keyboard shortcuts
+
+| Key | Does |
+| --- | --- |
+| `F` | Toggle full screen |
+| `M` | Mute or unmute the alarm |
+
+Your schedule, period names, and alarm settings are saved in `localStorage`, so
+the site comes straight back to the live screen next time. It is per-device and per-browser —
 nothing leaves the machine. **Edit periods** changes the names; **Change
 schedule** clears the save and starts over.
 
@@ -90,5 +149,27 @@ index.html?t=14:04
 | --- | --- |
 | `index.html` | The three screens: choose, setup, live |
 | `schedules.js` | Bell schedule data and the lunch-splitting logic |
-| `app.js` | Storage, the clock, and rendering |
+| `sounds.js` | The alarm sounds, synthesized with the Web Audio API |
+| `app.js` | Storage, the clock, the alarm trigger, and rendering |
 | `styles.css` | Styling, including a dark mode that follows the OS |
+
+## Adding an alarm sound
+
+Add an entry to `SOUNDS` in [`sounds.js`](sounds.js). Each one schedules its own
+notes and returns how long it runs, in seconds:
+
+```js
+{
+  id: 'two-tone',
+  name: 'Two tone',
+  description: 'Shown under the name on the setup screen.',
+  play: function (out, at) {
+    note(out, { at: at,        freq: 660, dur: 0.4, gain: 0.5, type: 'sine' });
+    note(out, { at: at + 0.35, freq: 880, dur: 0.6, gain: 0.5, type: 'sine' });
+    return 1.0;
+  }
+}
+```
+
+`note()` and `bell()` are the helpers above it. Keep peaks under about 0.7 so the
+sound does not clip at full volume.

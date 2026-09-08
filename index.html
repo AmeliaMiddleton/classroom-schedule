@@ -19,7 +19,7 @@
   <div id="schedule-groups"></div>
 </main>
 
-<!-- 2. Name the periods ---------------------------------------------------- -->
+<!-- 2. Name the periods, pick the alarm ------------------------------------ -->
 <main id="screen-setup" class="screen" hidden>
   <header class="page-head">
     <h1 id="setup-title">Name your periods</h1>
@@ -32,8 +32,44 @@
     <div id="lunch-options" class="lunch-options"></div>
   </div>
 
-  <form id="setup-form" class="card">
-    <div id="period-inputs"></div>
+  <form id="setup-form">
+    <div class="card">
+      <div id="period-inputs"></div>
+    </div>
+
+    <div class="card">
+      <h2>Warning alarm</h2>
+      <p class="hint">Rings before each teaching period ends, so you can start
+        wrapping up. Pick a sound to hear it.</p>
+
+      <div class="setting">
+        <label class="switch">
+          <input type="checkbox" id="alarm-on" checked>
+          <span>Play a warning alarm</span>
+        </label>
+      </div>
+
+      <div id="alarm-detail">
+        <div class="setting">
+          <span class="setting-name">Ring this long before the bell</span>
+          <div id="lead-options" class="chip-row"></div>
+        </div>
+
+        <div class="setting">
+          <span class="setting-name">Volume</span>
+          <div class="volume-row">
+            <input type="range" id="alarm-volume" min="0.1" max="1" step="0.05" value="0.8">
+            <output id="alarm-volume-value">80%</output>
+          </div>
+        </div>
+
+        <div class="setting setting-block">
+          <span class="setting-name">Sound</span>
+          <div id="sound-options" class="sound-options"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="actions">
       <button type="submit" class="btn btn-primary">Save &amp; start</button>
       <button type="button" class="btn" data-action="back-to-choose">Pick a different schedule</button>
@@ -43,35 +79,47 @@
 
 <!-- 3. Live view ----------------------------------------------------------- -->
 <main id="screen-live" class="screen" hidden>
+  <div id="sound-notice" class="notice" hidden>
+    <span>The browser is blocking sound until someone interacts with the page.</span>
+    <button type="button" class="btn btn-small" data-action="enable-sound">Turn on sound</button>
+  </div>
+
   <div class="live-top">
     <div class="live-meta">
       <span id="live-schedule-name"></span>
       <span class="dot">&middot;</span>
       <span id="live-clock"></span>
+      <span class="dot">&middot;</span>
+      <span id="live-alarm-state"></span>
     </div>
     <div class="live-tools">
-      <button type="button" class="btn btn-small" data-action="edit-periods">Edit periods</button>
+      <button type="button" class="btn btn-small" data-action="toggle-alarm" id="btn-alarm">Mute</button>
+      <button type="button" class="btn btn-small" data-action="fullscreen" id="btn-fullscreen">Full screen</button>
+      <button type="button" class="btn btn-small" data-action="edit-periods">Edit</button>
       <button type="button" class="btn btn-small" data-action="change-schedule">Change schedule</button>
     </div>
   </div>
 
-  <section class="now" aria-live="polite">
-    <p id="now-status" class="now-status">Now</p>
-    <h2 id="now-label" class="now-label">—</h2>
-    <p id="now-sub" class="now-sub"></p>
-    <p id="now-remaining" class="now-remaining"><span class="count">—</span></p>
-    <p id="now-remaining-label" class="now-remaining-label">remaining</p>
-    <div class="progress"><div id="now-progress" class="progress-bar"></div></div>
-    <p id="now-next" class="now-next"></p>
-  </section>
+  <div class="live-grid">
+    <section class="now" aria-live="polite">
+      <p id="now-status" class="now-status">Now</p>
+      <h2 id="now-label" class="now-label">&mdash;</h2>
+      <p id="now-sub" class="now-sub"></p>
+      <p id="now-remaining" class="now-remaining">&mdash;</p>
+      <p id="now-remaining-label" class="now-remaining-label">remaining</p>
+      <div class="progress"><div id="now-progress" class="progress-bar"></div></div>
+      <p id="now-next" class="now-next"></p>
+    </section>
 
-  <section class="day">
-    <h3 class="day-head">Today</h3>
-    <ol id="day-list" class="day-list"></ol>
-  </section>
+    <section class="day">
+      <h3 class="day-head">Today</h3>
+      <ol id="day-list" class="day-list"></ol>
+    </section>
+  </div>
 </main>
 
 <script src="schedules.js"></script>
+<script src="sounds.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

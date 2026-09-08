@@ -5,6 +5,14 @@
   'use strict';
 
   var STORAGE_KEY = 'classroom-schedule.v1';
+  var LEAD_CHOICES = [1, 2, 3, 5, 10];
+
+  var DEFAULTS = {
+    alarmOn: true,
+    sound: 'chime',
+    leadMinutes: 5,
+    volume: 0.8
+  };
 
   var el = {
     screens: {
@@ -18,8 +26,18 @@
     periodInputs: document.getElementById('period-inputs'),
     lunchPicker: document.getElementById('lunch-picker'),
     lunchOptions: document.getElementById('lunch-options'),
+    alarmOn: document.getElementById('alarm-on'),
+    alarmDetail: document.getElementById('alarm-detail'),
+    leadOptions: document.getElementById('lead-options'),
+    soundOptions: document.getElementById('sound-options'),
+    volume: document.getElementById('alarm-volume'),
+    volumeValue: document.getElementById('alarm-volume-value'),
+    soundNotice: document.getElementById('sound-notice'),
     liveName: document.getElementById('live-schedule-name'),
     clock: document.getElementById('live-clock'),
+    alarmState: document.getElementById('live-alarm-state'),
+    btnAlarm: document.getElementById('btn-alarm'),
+    btnFullscreen: document.getElementById('btn-fullscreen'),
     now: document.querySelector('.now'),
     nowStatus: document.getElementById('now-status'),
     nowLabel: document.getElementById('now-label'),
@@ -32,10 +50,19 @@
   };
 
   var state = load();
-  var draft = null;   // { scheduleId, lunchId } while on the setup screen
+  var draft = null;   // { scheduleId, lunchId, alarm settings } while in setup
   var ticker = null;
+  var warned = { periodId: null, prevRemaining: null };
 
   /* --- storage ----------------------------------------------------------- */
+
+  function withDefaults(config) {
+    Object.keys(DEFAULTS).forEach(function (key) {
+      if (config[key] === undefined || config[key] === null) config[key] = DEFAULTS[key];
+    });
+    config.labels = config.labels || {};
+    return config;
+  }
 
   function load() {
     try {
@@ -43,17 +70,16 @@
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       if (!parsed || !findSchedule(parsed.scheduleId)) return null;
-      parsed.labels = parsed.labels || {};
-      return parsed;
+      return withDefaults(parsed);
     } catch (err) {
       return null;
     }
   }
 
   function save(next) {
-    state = next;
+    state = withDefaults(next);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (err) {
       /* private browsing or a full quota — the app still works for this visit */
     }
@@ -85,8 +111,7 @@
   }
 
   function formatLength(period) {
-    var mins = toMinutes(period.end) - toMinutes(period.start);
-    return mins + ' min';
+    return (toMinutes(period.end) - toMinutes(period.start)) + ' min';
   }
 
   function formatCountdown(seconds) {
@@ -112,9 +137,7 @@
   })();
 
   function secondsNow() {
-    if (override) {
-      return override.base + (Date.now() - override.from) / 1000;
-    }
+    if (override) return override.base + (Date.now() - override.from) / 1000;
     var d = new Date();
     return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
   }
@@ -174,10 +197,15 @@
     Object.keys(el.screens).forEach(function (key) {
       el.screens[key].hidden = key !== which;
     });
+    document.body.dataset.screen = which;
     if (ticker) { clearInterval(ticker); ticker = null; }
     if (which === 'live') {
+      warned = { periodId: null, prevRemaining: null };
       tick();
       ticker = setInterval(tick, 1000);
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
     }
     window.scrollTo(0, 0);
   }
@@ -245,11 +273,16 @@
 
   function startSetup(scheduleId) {
     var existing = state && state.scheduleId === scheduleId ? state : null;
-    draft = {
+    draft = withDefaults({
       scheduleId: scheduleId,
-      lunchId: existing ? existing.lunchId : null
-    };
+      lunchId: existing ? existing.lunchId : null,
+      alarmOn: state ? state.alarmOn : undefined,
+      sound: state ? state.sound : undefined,
+      leadMinutes: state ? state.leadMinutes : undefined,
+      volume: state ? state.volume : undefined
+    });
     renderSetup();
+    renderAlarmSettings();
     show('setup');
   }
 
@@ -323,14 +356,97 @@
     });
   }
 
+  function renderAlarmSettings() {
+    el.alarmOn.checked = !!draft.alarmOn;
+    el.alarmDetail.hidden = !draft.alarmOn;
+    el.volume.value = String(draft.volume);
+    el.volumeValue.textContent = Math.round(draft.volume * 100) + '%';
+
+    el.leadOptions.innerHTML = '';
+    LEAD_CHOICES.forEach(function (minutes) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = minutes + ' min';
+      chip.setAttribute('aria-pressed', String(minutes === draft.leadMinutes));
+      chip.addEventListener('click', function () {
+        draft.leadMinutes = minutes;
+        renderAlarmSettings();
+      });
+      el.leadOptions.appendChild(chip);
+    });
+
+    el.soundOptions.innerHTML = '';
+    Sounds.list.forEach(function (sound) {
+      var option = document.createElement('div');
+      option.className = 'sound-option';
+      option.setAttribute('aria-current', String(sound.id === draft.sound));
+
+      var pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'sound-pick';
+      var pickName = document.createElement('span');
+      pickName.className = 'sound-name';
+      pickName.textContent = sound.name;
+      var pickDesc = document.createElement('span');
+      pickDesc.className = 'sound-desc';
+      pickDesc.textContent = sound.description;
+      pick.appendChild(pickName);
+      pick.appendChild(pickDesc);
+      pick.setAttribute('aria-pressed', String(sound.id === draft.sound));
+      pick.addEventListener('click', function () {
+        draft.sound = sound.id;
+        renderAlarmSettings();
+        Sounds.play(sound.id, draft.volume);   // picking it plays it
+      });
+
+      var preview = document.createElement('button');
+      preview.type = 'button';
+      preview.className = 'sound-preview';
+      preview.title = 'Play ' + sound.name;
+      preview.setAttribute('aria-label', 'Play ' + sound.name);
+      preview.textContent = '▶';
+      preview.addEventListener('click', function () {
+        Sounds.play(sound.id, draft.volume);
+      });
+
+      option.appendChild(pick);
+      option.appendChild(preview);
+      el.soundOptions.appendChild(option);
+    });
+  }
+
+  el.alarmOn.addEventListener('change', function () {
+    draft.alarmOn = el.alarmOn.checked;
+    el.alarmDetail.hidden = !draft.alarmOn;
+  });
+
+  el.volume.addEventListener('input', function () {
+    draft.volume = parseFloat(el.volume.value);
+    el.volumeValue.textContent = Math.round(draft.volume * 100) + '%';
+  });
+
+  el.volume.addEventListener('change', function () {
+    Sounds.play(draft.sound, draft.volume);
+  });
+
   el.setupForm.addEventListener('submit', function (event) {
     event.preventDefault();
     var labels = {};
-    Array.prototype.forEach.call(el.setupForm.querySelectorAll('input[type="text"]'),
+    Array.prototype.forEach.call(el.periodInputs.querySelectorAll('input[type="text"]'),
       function (input) {
         if (input.value.trim()) labels[input.name] = input.value.trim();
       });
-    save({ scheduleId: draft.scheduleId, lunchId: draft.lunchId, labels: labels });
+    save({
+      scheduleId: draft.scheduleId,
+      lunchId: draft.lunchId,
+      labels: labels,
+      alarmOn: draft.alarmOn,
+      sound: draft.sound,
+      leadMinutes: draft.leadMinutes,
+      volume: draft.volume
+    });
+    Sounds.unlock();   // this click is the gesture that lets audio play later
     show('live');
   });
 
@@ -345,6 +461,7 @@
 
     el.liveName.textContent = schedule.name;
     el.clock.textContent = clockNow();
+    renderAlarmState();
 
     var current = null;
     var next = null;
@@ -358,8 +475,39 @@
       }
     }
 
+    checkAlarm(current, seconds);
     renderNow(current, next, seconds, timeline);
     renderDay(timeline, seconds);
+  }
+
+  /* Ring once, on the tick that crosses the warning line. Comparing against the
+   * previous tick means reloading the page mid-period never sets it off. */
+  function checkAlarm(current, seconds) {
+    var lead = state.leadMinutes * 60;
+    var isTimed = current && current.kind === 'class';
+    var remaining = isTimed ? toMinutes(current.end) * 60 - seconds : null;
+    var id = isTimed ? current.id : null;
+
+    if (id !== warned.periodId) {
+      warned = { periodId: id, prevRemaining: remaining };
+      return;
+    }
+
+    var crossed = warned.prevRemaining !== null &&
+      warned.prevRemaining > lead && remaining <= lead && remaining > 0;
+
+    if (crossed && state.alarmOn) Sounds.play(state.sound, state.volume);
+    warned.prevRemaining = remaining;
+  }
+
+  function renderAlarmState() {
+    var sound = Sounds.find(state.sound);
+    el.alarmState.textContent = state.alarmOn
+      ? sound.name + ' · ' + state.leadMinutes + ' min warning'
+      : 'Alarm muted';
+    el.btnAlarm.textContent = state.alarmOn ? 'Mute' : 'Unmute';
+    el.btnAlarm.setAttribute('aria-pressed', String(!state.alarmOn));
+    el.soundNotice.hidden = !(state.alarmOn && Sounds.blocked());
   }
 
   function renderNow(current, next, seconds, timeline) {
@@ -370,20 +518,25 @@
     if (current) {
       var startsAt = toMinutes(current.start) * 60;
       var endsAt = toMinutes(current.end) * 60;
+      var remaining = endsAt - seconds;
       var label = current.kind === 'passing'
         ? 'Passing period'
         : labelFor(current, state.labels);
+
+      // Colour the countdown once the warning has sounded.
+      el.now.classList.toggle('is-warning',
+        current.kind === 'class' && remaining <= state.leadMinutes * 60);
 
       el.nowStatus.textContent = 'Now';
       el.nowLabel.textContent = label;
       el.nowSub.textContent = (label === current.name ? '' : current.name + ' · ') +
         formatRange(current);
-      el.nowRemaining.textContent = formatCountdown(endsAt - seconds);
+      el.nowRemaining.textContent = formatCountdown(remaining);
       el.nowRemainingLabel.textContent = 'remaining';
       el.nowProgress.style.width =
         Math.min(100, ((seconds - startsAt) / (endsAt - startsAt)) * 100) + '%';
       el.nowNext.textContent = next
-        ? 'Next: ' + describe(next) + ' at ' + formatTime(next.start)
+        ? 'Next: ' + labelFor(next, state.labels) + ' at ' + formatTime(next.start)
         : 'Nothing after this — enjoy the rest of your day.';
       return;
     }
@@ -391,6 +544,7 @@
     // Outside the bell schedule: before the first bell, or after the last one.
     var first = timeline[0];
     var last = timeline[timeline.length - 1];
+    el.now.classList.remove('is-warning');
     el.nowProgress.style.width = '0%';
 
     if (seconds < toMinutes(first.start) * 60) {
@@ -399,7 +553,7 @@
       el.nowSub.textContent = 'First bell at ' + formatTime(first.start);
       el.nowRemaining.textContent = formatCountdown(toMinutes(first.start) * 60 - seconds);
       el.nowRemainingLabel.textContent = 'until the first bell';
-      el.nowNext.textContent = 'First up: ' + describe(first);
+      el.nowNext.textContent = 'First up: ' + labelFor(first, state.labels);
     } else {
       el.nowStatus.textContent = 'After school';
       el.nowLabel.textContent = 'The day is done';
@@ -410,16 +564,16 @@
     }
   }
 
-  function describe(period) {
-    return labelFor(period, state.labels);
-  }
+  var shownCurrentId = null;
 
   function renderDay(timeline, seconds) {
+    var currentItem = null;
     el.dayList.innerHTML = '';
     timeline.forEach(function (period) {
       var startsAt = toMinutes(period.start) * 60;
       var endsAt = toMinutes(period.end) * 60;
       var item = document.createElement('li');
+      item.dataset.periodId = period.id;
       item.className =
         (seconds >= endsAt ? 'is-past ' : '') +
         (seconds >= startsAt && seconds < endsAt ? 'is-current ' : '') +
@@ -448,11 +602,50 @@
       item.appendChild(time);
       item.appendChild(label);
       item.appendChild(len);
+      if (item.className.indexOf('is-current') > -1) currentItem = item;
       el.dayList.appendChild(item);
+    });
+
+    // Long schedules scroll inside their column; keep the current period in
+    // view so an unattended screen never needs touching.
+    var currentId = currentItem ? currentItem.dataset.periodId : null;
+    if (currentItem && currentId !== shownCurrentId) {
+      currentItem.scrollIntoView({ block: 'center' });
+    }
+    shownCurrentId = currentId;
+  }
+
+  /* --- keeping a TV awake ------------------------------------------------ */
+
+  var wakeLock = null;
+
+  function requestWakeLock() {
+    if (!navigator.wakeLock || wakeLock) return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      wakeLock = lock;
+      lock.addEventListener('release', function () { wakeLock = null; });
+    }).catch(function () {
+      /* not permitted (no gesture yet, or unsupported) — the clock still runs */
     });
   }
 
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && document.body.dataset.screen === 'live') requestWakeLock();
+  });
+
   /* --- global actions ---------------------------------------------------- */
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function () {});
+    }
+  }
 
   document.addEventListener('click', function (event) {
     var trigger = event.target.closest('[data-action]');
@@ -467,6 +660,37 @@
       clearSaved();
       renderChoose();
       show('choose');
+    } else if (action === 'toggle-alarm') {
+      state.alarmOn = !state.alarmOn;
+      save(state);
+      if (state.alarmOn) Sounds.play(state.sound, state.volume);
+      renderAlarmState();
+    } else if (action === 'fullscreen') {
+      toggleFullscreen();
+    } else if (action === 'enable-sound') {
+      Sounds.unlock();
+      window.setTimeout(function () {
+        Sounds.play(state.sound, state.volume);
+        renderAlarmState();
+      }, 120);
+    }
+  });
+
+  /* Any interaction is a chance to satisfy the browser's autoplay rules. */
+  ['click', 'keydown', 'touchend'].forEach(function (type) {
+    document.addEventListener(type, function () { Sounds.unlock(); }, { once: true });
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (document.body.dataset.screen !== 'live') return;
+    if (event.target.matches('input, textarea')) return;
+    var key = event.key.toLowerCase();
+    if (key === 'f') {
+      toggleFullscreen();
+    } else if (key === 'm') {
+      state.alarmOn = !state.alarmOn;
+      save(state);
+      renderAlarmState();
     }
   });
 
