@@ -36,7 +36,10 @@
     liveName: document.getElementById('live-schedule-name'),
     clock: document.getElementById('live-clock'),
     alarmState: document.getElementById('live-alarm-state'),
+    alarmNote: document.getElementById('alarm-note'),
     btnAlarm: document.getElementById('btn-alarm'),
+    crestKey: document.getElementById('crest-key'),
+    teacherTools: document.getElementById('teacher-tools'),
     btnFullscreen: document.getElementById('btn-fullscreen'),
     now: document.querySelector('.now'),
     nowStatus: document.getElementById('now-status'),
@@ -200,6 +203,7 @@
     document.body.dataset.screen = which;
     if (ticker) { clearInterval(ticker); ticker = null; }
     if (which === 'live') {
+      hideTools();
       warned = { periodId: null, prevRemaining: null };
       tick();
       ticker = setInterval(tick, 1000);
@@ -505,6 +509,9 @@
     el.alarmState.textContent = state.alarmOn
       ? sound.name + ' · ' + state.leadMinutes + ' min warning'
       : 'Alarm muted';
+    /* Which sound is set is the teacher's business, but a muted alarm stays on
+     * show — otherwise it is silently off for days. */
+    el.alarmNote.hidden = state.alarmOn && !toolsShown();
     el.btnAlarm.textContent = state.alarmOn ? 'Mute' : 'Unmute';
     el.btnAlarm.setAttribute('aria-pressed', String(!state.alarmOn));
     el.soundNotice.hidden = !(state.alarmOn && Sounds.blocked());
@@ -615,6 +622,76 @@
     shownCurrentId = currentId;
   }
 
+  /* --- teacher controls --------------------------------------------------
+   *
+   * Only Full screen is on show during class. Everything else appears when
+   * the crest is held down for a moment, or when T is pressed, and hides
+   * itself again shortly after so it is never left up on the board. */
+
+  var HOLD_MS = 1500;
+  var TOOLS_IDLE_MS = 25000;
+  var holdTimer = null;
+  var idleTimer = null;
+
+  function toolsShown() {
+    return !el.teacherTools.hidden;
+  }
+
+  function showTools() {
+    el.teacherTools.hidden = false;
+    el.crestKey.classList.add('is-open');
+    renderAlarmState();
+    resetToolsIdle();
+  }
+
+  function hideTools() {
+    el.teacherTools.hidden = true;
+    el.crestKey.classList.remove('is-open');
+    window.clearTimeout(idleTimer);
+  }
+
+  function resetToolsIdle() {
+    window.clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(hideTools, TOOLS_IDLE_MS);
+  }
+
+  function toggleTools() {
+    if (toolsShown()) hideTools(); else showTools();
+  }
+
+  function startHold() {
+    window.clearTimeout(holdTimer);
+    el.crestKey.classList.add('is-holding');
+    holdTimer = window.setTimeout(function () {
+      el.crestKey.classList.remove('is-holding');
+      toggleTools();
+    }, HOLD_MS);
+  }
+
+  function cancelHold() {
+    window.clearTimeout(holdTimer);
+    el.crestKey.classList.remove('is-holding');
+  }
+
+  el.crestKey.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (type) {
+    el.crestKey.addEventListener(type, cancelHold);
+  });
+  /* A long press on a touchscreen would otherwise pop the browser's own menu. */
+  el.crestKey.addEventListener('contextmenu', function (event) {
+    event.preventDefault();
+  });
+  /* Holding Enter or Space on the focused crest works the same way, which is
+   * the route a TV remote's D-pad takes. */
+  el.crestKey.addEventListener('keydown', function (event) {
+    if ((event.key === 'Enter' || event.key === ' ') && !event.repeat) startHold();
+  });
+  el.crestKey.addEventListener('keyup', cancelHold);
+  el.crestKey.addEventListener('blur', cancelHold);
+
+  /* Keep the panel up while it is being used. */
+  el.teacherTools.addEventListener('click', resetToolsIdle);
+
   /* --- keeping a TV awake ------------------------------------------------ */
 
   var wakeLock = null;
@@ -657,9 +734,13 @@
     } else if (action === 'edit-periods') {
       startSetup(state.scheduleId);
     } else if (action === 'change-schedule') {
+      // This throws away the period names, so make it a deliberate choice.
+      if (!window.confirm('Start over? This clears your period names and alarm settings.')) return;
       clearSaved();
       renderChoose();
       show('choose');
+    } else if (action === 'hide-tools') {
+      hideTools();
     } else if (action === 'toggle-alarm') {
       state.alarmOn = !state.alarmOn;
       save(state);
@@ -691,6 +772,10 @@
       state.alarmOn = !state.alarmOn;
       save(state);
       renderAlarmState();
+    } else if (key === 't') {
+      toggleTools();
+    } else if (event.key === 'Escape') {
+      hideTools();
     }
   });
 

@@ -341,7 +341,31 @@ body[data-screen="live"] { overflow: hidden; }
   font-variant-numeric: tabular-nums;
 }
 .live-meta .dot { margin: 0 6px; color: var(--accent); }
-.live-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.live-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.teacher-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .teacher-tools { animation: tools-in .18s ease-out; }
+}
+@keyframes tools-in {
+  from { opacity: 0; transform: translateX(10px); }
+}
+
+/* The crest is a control, but must not look like one — no border, no
+ * background, no hover state. Holding it dips it slightly so the teacher
+ * knows the press registered; nothing shows otherwise. */
+.crest-key {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+  line-height: 0;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform .15s ease-out, opacity .15s ease-out;
+}
+.crest-key.is-holding { transform: scale(.9); opacity: .65; }
+.crest-key.is-open { opacity: .85; }
 
 .live-grid {
   flex: 1 1 auto;

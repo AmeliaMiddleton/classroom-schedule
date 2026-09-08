@@ -86,12 +86,39 @@ without settings.
 - Everything is reachable with a remote's D-pad; focused controls get a heavy
   outline.
 
+### Teacher controls
+
+During class the only button on screen is **Full screen**. Mute, Edit and
+Change schedule are hidden, so a student looking at the board sees a clock and
+nothing to press.
+
+**To bring them up, press and hold the Pioneer crest in the top-left corner for
+about a second and a half.** A tap does nothing, and sliding off the crest
+mid-press cancels — it takes a deliberate hold. The crest dips slightly while
+you hold it so you know it registered. Hold it again, press **Hide**, or press
+`Escape` to put them away; they also hide themselves after 25 seconds of not
+being touched, and any time the live screen reloads.
+
+`T` does the same thing from a keyboard, which is the route to use from a TV
+remote with a keyboard attached. On a remote with only a D-pad, focus the crest
+and hold `OK`.
+
+Which alarm sound is set only shows while the controls are open — but **Alarm
+muted** stays on the header the whole time, so a muted alarm can't quietly stay
+off for a week. **Change schedule** asks for confirmation first, since it clears
+your period names.
+
+To move the hidden press somewhere else, change what `#crest-key` is attached to
+in [`app.js`](app.js); to make it longer or shorter, change `HOLD_MS`.
+
 ### Keyboard shortcuts
 
 | Key | Does |
 | --- | --- |
 | `F` | Toggle full screen |
 | `M` | Mute or unmute the alarm |
+| `T` | Show or hide the teacher controls |
+| `Escape` | Hide the teacher controls |
 
 Your schedule, period names, and alarm settings are saved in `localStorage`, so
 the site comes straight back to the live screen next time. It is per-device and per-browser —

@@ -92,20 +92,28 @@
 
   <div class="live-top">
     <div class="live-brand">
-      <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+      <!-- The crest is the way in to the teacher controls: hold it for a
+           moment and they appear. It looks like a logo, not a button. -->
+      <button type="button" class="crest-key" id="crest-key"
+              aria-label="Hold for teacher controls">
+        <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+      </button>
       <div class="live-meta">
       <span id="live-schedule-name"></span>
       <span class="dot">&middot;</span>
       <span id="live-clock"></span>
-      <span class="dot">&middot;</span>
-      <span id="live-alarm-state"></span>
+      <span id="alarm-note" hidden><span class="dot">&middot;</span><span
+        id="live-alarm-state"></span></span>
       </div>
     </div>
     <div class="live-tools">
-      <button type="button" class="btn btn-small" data-action="toggle-alarm" id="btn-alarm">Mute</button>
+      <div class="teacher-tools" id="teacher-tools" hidden>
+        <button type="button" class="btn btn-small" data-action="toggle-alarm" id="btn-alarm">Mute</button>
+        <button type="button" class="btn btn-small" data-action="edit-periods">Edit</button>
+        <button type="button" class="btn btn-small" data-action="change-schedule">Change schedule</button>
+        <button type="button" class="btn btn-small" data-action="hide-tools">Hide</button>
+      </div>
       <button type="button" class="btn btn-small" data-action="fullscreen" id="btn-fullscreen">Full screen</button>
-      <button type="button" class="btn btn-small" data-action="edit-periods">Edit</button>
-      <button type="button" class="btn btn-small" data-action="change-schedule">Change schedule</button>
     </div>
   </div>
 
