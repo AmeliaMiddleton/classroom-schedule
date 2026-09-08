@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Classroom Schedule</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128276;</text></svg>">
+</head>
+<body>
+
+<!-- 1. Pick a bell schedule ------------------------------------------------ -->
+<main id="screen-choose" class="screen">
+  <header class="page-head">
+    <h1>Classroom Schedule</h1>
+    <p class="lede">Pick your bell schedule to get started.</p>
+  </header>
+  <div id="schedule-groups"></div>
+</main>
+
+<!-- 2. Name the periods ---------------------------------------------------- -->
+<main id="screen-setup" class="screen" hidden>
+  <header class="page-head">
+    <h1 id="setup-title">Name your periods</h1>
+    <p class="lede">What do you teach each period? Leave any blank to keep the
+      default name. Saved on this device only.</p>
+  </header>
+
+  <div id="lunch-picker" class="card" hidden>
+    <h2>Which lunch are you assigned?</h2>
+    <div id="lunch-options" class="lunch-options"></div>
+  </div>
+
+  <form id="setup-form" class="card">
+    <div id="period-inputs"></div>
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">Save &amp; start</button>
+      <button type="button" class="btn" data-action="back-to-choose">Pick a different schedule</button>
+    </div>
+  </form>
+</main>
+
+<!-- 3. Live view ----------------------------------------------------------- -->
+<main id="screen-live" class="screen" hidden>
+  <div class="live-top">
+    <div class="live-meta">
+      <span id="live-schedule-name"></span>
+      <span class="dot">&middot;</span>
+      <span id="live-clock"></span>
+    </div>
+    <div class="live-tools">
+      <button type="button" class="btn btn-small" data-action="edit-periods">Edit periods</button>
+      <button type="button" class="btn btn-small" data-action="change-schedule">Change schedule</button>
+    </div>
+  </div>
+
+  <section class="now" aria-live="polite">
+    <p id="now-status" class="now-status">Now</p>
+    <h2 id="now-label" class="now-label">—</h2>
+    <p id="now-sub" class="now-sub"></p>
+    <p id="now-remaining" class="now-remaining"><span class="count">—</span></p>
+    <p id="now-remaining-label" class="now-remaining-label">remaining</p>
+    <div class="progress"><div id="now-progress" class="progress-bar"></div></div>
+    <p id="now-next" class="now-next"></p>
+  </section>
+
+  <section class="day">
+    <h3 class="day-head">Today</h3>
+    <ol id="day-list" class="day-list"></ol>
+  </section>
+</main>
+
+<script src="schedules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
