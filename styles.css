@@ -1,35 +1,79 @@
+/* Pioneer theme — the palette and lettering of the 2026-27 bell schedule
+ * graphic: pioneer blue on white, heavy italic display type, light blue
+ * time blocks. Nunito is bundled in fonts/ so a TV with no network still
+ * renders correctly. */
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/nunito-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/nunito-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('fonts/nunito-900-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/nunito-700-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('fonts/nunito-900-italic.woff2') format('woff2');
+}
+
 :root {
-  --bg: #f4f5f7;
+  --bg: #e9f1fa;
   --surface: #ffffff;
-  --surface-2: #eef0f4;
-  --text: #14161a;
-  --muted: #5c6370;
-  --line: #d9dce2;
-  --accent: #1d4ed8;
-  --accent-soft: #e3eafd;
-  --break: #b45309;
-  --break-soft: #fdf0dc;
+  --surface-2: #d8e8f8;   /* the light blue time blocks */
+  --text: #0b2545;
+  --muted: #5f7899;
+  --line: #c7dcf1;
+  --accent: #2e76c0;      /* pioneer blue */
+  --accent-deep: #08407f; /* the navy in the mascot */
+  --accent-soft: #d8e8f8;
+  --break: #08407f;
+  --break-soft: #cfe0f2;
   --warn: #c2260f;
-  --warn-soft: #fde8e4;
+  --warn-soft: #fbe3de;
   --radius: 14px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .06);
+  --shadow: 0 1px 2px rgba(8, 64, 127, .08), 0 10px 28px rgba(8, 64, 127, .10);
+  --display: 900 italic;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1115;
-    --surface: #171a20;
-    --surface-2: #1e222a;
-    --text: #eceef2;
-    --muted: #9aa2b1;
-    --line: #2b3039;
-    --accent: #7aa2ff;
-    --accent-soft: #1c2740;
-    --break: #f0b357;
-    --break-soft: #2c2418;
-    --warn: #ff7a63;
-    --warn-soft: #341c18;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    --bg: #061421;
+    --surface: #0e2136;
+    --surface-2: #163351;
+    --text: #e9f2fc;
+    --muted: #8ea9c8;
+    --line: #1e3d5e;
+    --accent: #6fa8e6;
+    --accent-deep: #a9cdf2;
+    --accent-soft: #133150;
+    --break: #a9cdf2;
+    --break-soft: #112a44;
+    --warn: #ff8a72;
+    --warn-soft: #3b1b16;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 28px rgba(0, 0, 0, .4);
   }
 }
 
@@ -42,28 +86,49 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 400 16px/1.5 'Nunito', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 
 .screen {
-  max-width: 900px;
+  max-width: 940px;
   margin: 0 auto;
   padding: 28px 20px 64px;
 }
 
-.page-head { margin-bottom: 24px; }
-h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -.02em; }
-h2 { font-size: 1.05rem; margin: 0 0 6px; }
+/* The heavy slanted lettering of the printed schedule. */
+h1, h2, .now-label, .schedule-card .name, .day-list .label, .sound-name,
+.now-remaining, .day-list .time, .field-name {
+  font-style: italic;
+  font-weight: 900;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+.page-head .head-text { flex: 1; }
+.page-head .crest { width: clamp(80px, 12vw, 132px); height: auto; flex: 0 0 auto; }
+h1 {
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  margin: 0 0 4px;
+  letter-spacing: -.01em;
+  color: var(--accent);
+}
+h2 { font-size: 1.15rem; margin: 0 0 6px; color: var(--accent-deep); }
 .lede { color: var(--muted); margin: 0; max-width: 52ch; }
 .hint { color: var(--muted); margin: 0 0 16px; font-size: .9rem; max-width: 56ch; }
 
 /* --- choose screen ------------------------------------------------------- */
 .group { margin-bottom: 30px; }
 .group-name {
-  font-size: .78rem;
+  font-size: .8rem;
+  font-weight: 700;
+  font-style: normal;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: .1em;
   color: var(--muted);
   margin: 0 0 10px;
 }
@@ -75,7 +140,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .schedule-card {
   text-align: left;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid var(--line);
   border-radius: var(--radius);
   padding: 16px 18px;
   cursor: pointer;
@@ -84,9 +149,9 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   transition: border-color .15s, transform .15s;
 }
 .schedule-card:hover { border-color: var(--accent); transform: translateY(-1px); }
-.schedule-card .name { font-weight: 650; font-size: 1.05rem; }
-.schedule-card .subtitle { color: var(--muted); font-size: .88rem; margin-top: 3px; }
-.schedule-card .times { color: var(--muted); font-size: .8rem; margin-top: 10px; }
+.schedule-card .name { font-size: 1.2rem; color: var(--accent-deep); }
+.schedule-card .subtitle { color: var(--muted); font-size: .9rem; margin-top: 3px; }
+.schedule-card .times { color: var(--muted); font-size: .82rem; margin-top: 10px; }
 
 /* Focus rings matter here: a TV is driven by a remote, not a mouse. */
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -101,15 +166,20 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 }
 .field {
   display: grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns: 160px 1fr;
   gap: 14px;
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
 }
 .field:last-of-type { border-bottom: 0; }
-.field-name { font-weight: 600; }
-.field-time { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.field-name { color: var(--accent-deep); }
+.field-time {
+  color: var(--muted);
+  font-size: .85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .field input {
   width: 100%;
   padding: 10px 12px;
@@ -119,24 +189,26 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   border: 1px solid var(--line);
   border-radius: 10px;
 }
-.field.is-break .field-name { color: var(--break); }
+.field.is-break .field-name { color: var(--accent); }
 
 .lunch-options, .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .lunch-option, .chip {
-  padding: 10px 14px;
-  border: 1px solid var(--line);
+  padding: 10px 16px;
+  border: 2px solid var(--line);
   background: var(--surface-2);
   border-radius: 999px;
   cursor: pointer;
   font: inherit;
-  color: inherit;
+  font-weight: 700;
+  color: var(--accent-deep);
 }
-.chip { padding: 8px 14px; }
+.chip { padding: 8px 16px; }
 .lunch-option[aria-pressed="true"], .chip[aria-pressed="true"] {
   border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  font-style: italic;
+  font-weight: 900;
 }
 
 /* --- alarm settings ------------------------------------------------------ */
@@ -150,15 +222,20 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   border-top: 1px solid var(--line);
 }
 .setting-block { display: block; }
-.setting-name { font-weight: 600; }
+.setting-name { font-weight: 700; color: var(--accent-deep); }
 .setting-block .setting-name { display: block; margin-bottom: 10px; }
 
-.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
+.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; }
 .switch input { width: 20px; height: 20px; accent-color: var(--accent); }
 
 .volume-row { display: flex; align-items: center; gap: 12px; }
 .volume-row input[type="range"] { width: 200px; accent-color: var(--accent); }
-.volume-row output { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 3.5ch; }
+.volume-row output {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 3.5ch;
+}
 
 .sound-options {
   display: grid;
@@ -168,15 +245,12 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
 .sound-option {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--line);
+  border: 2px solid var(--line);
   border-radius: 12px;
   background: var(--surface-2);
   overflow: hidden;
 }
-.sound-option[aria-current="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
+.sound-option[aria-current="true"] { border-color: var(--accent); }
 .sound-pick {
   flex: 1;
   text-align: left;
@@ -187,7 +261,7 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   font: inherit;
   cursor: pointer;
 }
-.sound-name { display: block; font-weight: 650; }
+.sound-name { display: block; font-size: 1.05rem; color: var(--accent-deep); }
 .sound-option[aria-current="true"] .sound-name { color: var(--accent); }
 .sound-desc { display: block; color: var(--muted); font-size: .84rem; margin-top: 2px; }
 .sound-preview {
@@ -195,27 +269,33 @@ h2 { font-size: 1.05rem; margin: 0 0 6px; }
   border: 0;
   border-left: 1px solid var(--line);
   background: none;
-  color: var(--muted);
+  color: var(--accent);
   font-size: 1.1rem;
   cursor: pointer;
 }
-.sound-preview:hover { color: var(--accent); background: var(--surface); }
+.sound-preview:hover { background: var(--surface); }
 
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .btn {
-  padding: 11px 16px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  padding: 11px 18px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
   background: var(--surface-2);
-  color: inherit;
+  color: var(--accent-deep);
   font: inherit;
-  font-weight: 550;
+  font-weight: 700;
   cursor: pointer;
 }
 .btn:hover { border-color: var(--accent); }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-style: italic;
+  font-weight: 900;
+}
 .btn-primary:hover { filter: brightness(1.08); }
-.btn-small { padding: 7px 11px; font-size: .85rem; }
+.btn-small { padding: 7px 14px; font-size: .85rem; }
 
 /* --- live screen --------------------------------------------------------- */
 body[data-screen="live"] { overflow: hidden; }
@@ -236,11 +316,12 @@ body[data-screen="live"] { overflow: hidden; }
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid var(--break);
-  background: var(--break-soft);
-  border-radius: 12px;
+  padding: 10px 16px;
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
   font-size: .9rem;
+  font-weight: 700;
 }
 
 .live-top {
@@ -251,12 +332,15 @@ body[data-screen="live"] { overflow: hidden; }
   justify-content: space-between;
   flex: 0 0 auto;
 }
+.live-brand { display: flex; align-items: center; gap: clamp(10px, 1vw, 18px); }
+.live-brand .crest { height: clamp(40px, 4.4vw, 84px); width: auto; }
 .live-meta {
   color: var(--muted);
   font-size: clamp(.9rem, 1.1vw, 1.4rem);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.live-meta .dot { margin: 0 6px; }
+.live-meta .dot { margin: 0 6px; color: var(--accent); }
 .live-tools { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .live-grid {
@@ -268,9 +352,11 @@ body[data-screen="live"] { overflow: hidden; }
 }
 
 .now {
+  position: relative;
+  overflow: hidden;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 20px;
+  border: 3px solid var(--accent);
+  border-radius: 24px;
   box-shadow: var(--shadow);
   padding: clamp(18px, 3vh, 40px) clamp(18px, 2vw, 40px);
   text-align: center;
@@ -278,38 +364,53 @@ body[data-screen="live"] { overflow: hidden; }
   flex-direction: column;
   justify-content: center;
 }
-.now.is-break { background: var(--break-soft); border-color: var(--break); }
+/* The mascot, watermarked into the corner of the card. */
+.now::after {
+  content: '';
+  position: absolute;
+  right: -3%;
+  bottom: -6%;
+  width: clamp(140px, 26%, 460px);
+  aspect-ratio: 820 / 575;
+  background: url('pioneer.png') right bottom / contain no-repeat;
+  opacity: .07;
+  pointer-events: none;
+}
+.now > * { position: relative; }
+.now.is-break { background: var(--accent-soft); border-color: var(--accent-deep); }
 .now.is-warning { background: var(--warn-soft); border-color: var(--warn); }
 .now.is-idle .now-remaining { color: var(--muted); }
 .now-status {
   margin: 0 0 4px;
   font-size: clamp(.72rem, .9vw, 1.1rem);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .12em;
+  letter-spacing: .16em;
   color: var(--muted);
 }
 .now-label {
   margin: 0;
   font-size: clamp(1.9rem, 5.2vw, 6rem);
   line-height: 1.05;
-  letter-spacing: -.03em;
+  letter-spacing: -.02em;
+  color: var(--accent-deep);
 }
 .now-sub {
   margin: 6px 0 0;
   color: var(--muted);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: clamp(.9rem, 1.3vw, 1.6rem);
 }
 .now-remaining {
   margin: clamp(8px, 1.5vh, 24px) 0 0;
   font-size: clamp(3.4rem, 12vw, 14rem);
-  font-weight: 700;
   line-height: 1;
-  letter-spacing: -.04em;
+  letter-spacing: -.03em;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
-.now.is-break .now-remaining { color: var(--break); }
+.now.is-break .now-remaining { color: var(--accent-deep); }
 .now.is-warning .now-remaining { color: var(--warn); animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) {
@@ -319,8 +420,9 @@ body[data-screen="live"] { overflow: hidden; }
   margin: 4px 0 0;
   color: var(--muted);
   font-size: clamp(.72rem, .9vw, 1.1rem);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .12em;
+  letter-spacing: .16em;
 }
 .progress {
   height: clamp(8px, 1vh, 16px);
@@ -336,19 +438,21 @@ body[data-screen="live"] { overflow: hidden; }
   border-radius: 999px;
   transition: width .5s linear;
 }
-.now.is-break .progress-bar { background: var(--break); }
+.now.is-break .progress-bar { background: var(--accent-deep); }
 .now.is-warning .progress-bar { background: var(--warn); }
 .now-next {
   margin: clamp(10px, 1.5vh, 22px) 0 0;
   color: var(--muted);
+  font-weight: 700;
   font-size: clamp(.95rem, 1.4vw, 1.8rem);
 }
 
 .day { min-height: 0; display: flex; flex-direction: column; }
 .day-head {
   font-size: clamp(.72rem, .95vw, 1.15rem);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: .12em;
   color: var(--muted);
   margin: 0 0 8px;
   flex: 0 0 auto;
@@ -364,11 +468,11 @@ body[data-screen="live"] { overflow: hidden; }
 .day-list::-webkit-scrollbar { display: none; }
 .day-list li {
   display: grid;
-  grid-template-columns: minmax(9.5ch, auto) 1fr auto;
+  grid-template-columns: minmax(11ch, auto) 1fr auto;
   gap: 4px 12px;
   align-items: start;
-  padding: clamp(8px, 1.1vh, 16px) clamp(10px, .8vw, 18px);
-  border: 1px solid var(--line);
+  padding: clamp(7px, 1vh, 14px) clamp(8px, .7vw, 14px);
+  border: 2px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   margin-bottom: 8px;
@@ -376,27 +480,37 @@ body[data-screen="live"] { overflow: hidden; }
 }
 .day-list li.is-past { opacity: .4; }
 .day-list li.is-current { border-color: var(--accent); background: var(--accent-soft); }
-.day-list li.is-current.is-break { border-color: var(--break); background: var(--break-soft); }
+.day-list li.is-current.is-break { border-color: var(--accent-deep); }
+/* Times sit in a light blue block, the way they do on the printed schedule. */
 .day-list .time {
-  color: var(--muted);
-  font-size: .9em;
+  background: var(--surface-2);
+  color: var(--accent-deep);
+  border-radius: 8px;
+  padding: 2px 10px;
+  font-size: .82em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  text-align: center;
 }
-.day-list .label { font-weight: 600; }
+.day-list li.is-current .time { background: var(--surface); }
+.day-list .label { color: var(--accent-deep); align-self: center; }
 .day-list .sub {
   display: block;
   color: var(--muted);
-  font-weight: 400;
-  font-size: .85em;
+  font-style: normal;
+  font-weight: 700;
+  font-size: .82em;
 }
 .day-list .len {
   color: var(--muted);
-  font-size: .85em;
+  font-size: .8em;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  align-self: center;
 }
 .day-list li.is-passing { background: transparent; border-style: dashed; }
+.day-list li.is-passing .label { color: var(--muted); }
 
 /* Wide screens — a TV, a projector, a desktop — put the day beside the clock. */
 @media (min-width: 1000px) and (min-height: 500px) {
@@ -409,7 +523,9 @@ body[data-screen="live"] { overflow: hidden; }
 }
 
 @media (max-width: 560px) {
-  .day-list li { grid-template-columns: 1fr auto; gap: 4px 12px; }
-  .day-list .time { grid-column: 1 / -1; }
+  .page-head .crest { width: 70px; }
+  .field { grid-template-columns: 1fr; gap: 6px; }
+  .day-list li { grid-template-columns: 1fr auto; }
+  .day-list .time { grid-column: 1 / -1; justify-self: start; }
   .volume-row input[type="range"] { width: 140px; }
 }

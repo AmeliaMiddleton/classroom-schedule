@@ -6,15 +6,18 @@
 <meta name="color-scheme" content="light dark">
 <title>Classroom Schedule</title>
 <link rel="stylesheet" href="styles.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128276;</text></svg>">
+<link rel="icon" type="image/png" href="pioneer-icon.png">
 </head>
 <body>
 
 <!-- 1. Pick a bell schedule ------------------------------------------------ -->
 <main id="screen-choose" class="screen">
   <header class="page-head">
-    <h1>Classroom Schedule</h1>
-    <p class="lede">Pick your bell schedule to get started.</p>
+    <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+    <div class="head-text">
+      <h1>Classroom Schedule</h1>
+      <p class="lede">Pick your bell schedule to get started.</p>
+    </div>
   </header>
   <div id="schedule-groups"></div>
 </main>
@@ -22,9 +25,12 @@
 <!-- 2. Name the periods, pick the alarm ------------------------------------ -->
 <main id="screen-setup" class="screen" hidden>
   <header class="page-head">
-    <h1 id="setup-title">Name your periods</h1>
-    <p class="lede">What do you teach each period? Leave any blank to keep the
-      default name. Saved on this device only.</p>
+    <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+    <div class="head-text">
+      <h1 id="setup-title">Name your periods</h1>
+      <p class="lede">What do you teach each period? Leave any blank to keep the
+        default name. Saved on this device only.</p>
+    </div>
   </header>
 
   <div id="lunch-picker" class="card" hidden>
@@ -85,12 +91,15 @@
   </div>
 
   <div class="live-top">
-    <div class="live-meta">
+    <div class="live-brand">
+      <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+      <div class="live-meta">
       <span id="live-schedule-name"></span>
       <span class="dot">&middot;</span>
       <span id="live-clock"></span>
       <span class="dot">&middot;</span>
       <span id="live-alarm-state"></span>
+      </div>
     </div>
     <div class="live-tools">
       <button type="button" class="btn btn-small" data-action="toggle-alarm" id="btn-alarm">Mute</button>

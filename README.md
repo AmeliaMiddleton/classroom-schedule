@@ -51,6 +51,24 @@ that reloaded overnight starts muted. When that happens the live screen shows a
 and the alarm then works for the rest of the session. Pressing **Save & start**
 during setup already counts, so a normal run-through never hits this.
 
+## Look and feel
+
+The colours and lettering follow the printed 2026-27 bell schedule: pioneer
+blue (`#2e76c0`) and the mascot's navy (`#08407f`) on white, heavy italic
+display type, and times set in light blue blocks (`#d8e8f8`). The Pioneer
+appears as the header crest, as the browser-tab icon, and watermarked into the
+corner of the countdown card. A dark theme built on the same navy takes over
+when the device asks for one.
+
+Type is [Nunito](https://fonts.google.com/specimen/Nunito) (SIL Open Font
+License — see [`fonts/OFL.txt`](fonts/OFL.txt)), bundled in `fonts/` rather than
+loaded from a CDN so the page renders correctly on a TV with no network. Its
+digits are fixed-width, so the countdown does not jitter as it ticks.
+
+To re-theme, change the custom properties at the top of
+[`styles.css`](styles.css) — `--accent`, `--accent-deep`, `--accent-soft`,
+`--surface-2` — and swap `pioneer.png` and `pioneer-icon.png`.
+
 ## Putting it on a TV
 
 The live screen is built for a 10-foot read: at 1080p the countdown is about 220
@@ -152,6 +170,9 @@ index.html?t=14:04
 | `sounds.js` | The alarm sounds, synthesized with the Web Audio API |
 | `app.js` | Storage, the clock, the alarm trigger, and rendering |
 | `styles.css` | Styling, including a dark mode that follows the OS |
+| `pioneer.png` | The Pioneer crest and countdown-card watermark |
+| `pioneer-icon.png` | Browser-tab icon |
+| `fonts/` | Nunito, self-hosted, with its licence |
 
 ## Adding an alarm sound
 
