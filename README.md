@@ -4,9 +4,10 @@ A period timer for a classroom TV. Pick your school's bell schedule, name your
 periods once, and the screen shows what is happening now, how much time is left
 in it, and rings a warning alarm before each period ends.
 
-No build step, no dependencies, no network — open `index.html` or host the folder
+No build step, no dependencies, no server — open `index.html` or host the folder
 anywhere static (GitHub Pages works as-is). The alarm sounds are generated in the
-browser, so nothing has to load for the bell to ring.
+browser, so nothing has to load for the bell to ring, and the timer itself never
+touches the network. The one optional exception is the class blog below.
 
 ## How it works
 
@@ -15,7 +16,9 @@ browser, so nothing has to load for the bell to ring.
    "Algebra I", "ELA / Morning Meeting", whatever you call it. Blank fields keep
    the default name; recess and lunch are fixed. Then choose a warning sound,
    how early it rings, and how loud.
-3. **Watch the clock.** The live screen shows the current period, a countdown to
+3. **Optionally, connect a class blog.** Paste a Blogger address and the board
+   also shows what you post there. Skippable — everything else works without it.
+4. **Watch the clock.** The live screen shows the current period, a countdown to
    the bell, a progress bar, what is next, and the whole day at a glance.
 
 ## The warning alarm
@@ -50,6 +53,59 @@ that reloaded overnight starts muted. When that happens the live screen shows a
 **Turn on sound** bar — one click (or any button press on the remote) is enough,
 and the alarm then works for the rest of the session. Pressing **Save & start**
 during setup already counts, so a normal run-through never hits this.
+
+## The class blog
+
+The board can show a Blogger blog alongside the clock: a strip under the
+countdown carries the current period's plan and rotates through the rest of the
+posts, and each period in the day column picks up whatever is planned for it.
+
+Paste the blog's address into **Class blog** on the setup screen and press
+**Connect**. It reads the blog the way any visitor would — Blogger's public feed
+answers JSONP, which is what lets a static page on a different origin read it
+with no key and no server behind it. The blog has to be **public**
+(*Settings → Permissions → Reader access* in Blogger); a private one is
+invisible to the board.
+
+### Which post lands where
+
+A post goes to a period when one of its Blogger labels names that period —
+either the schedule's own name for it, the name you typed on the setup screen,
+or the same period number written differently.
+
+| Label on the post | Where it shows |
+| --- | --- |
+| `Algebra I` | The period you named "Algebra I" |
+| `Hour 3`, `3rd Hour`, `Period 3` | All reach Hour 3 |
+| `Instruction 2` | The elementary block of that name |
+| anything else, or no label | The announcements strip |
+
+Only the newest post per period shows, so yesterday's plan drops off on its own
+rather than piling up. Every post on the board carries its date, so a board
+nobody has posted to in a fortnight says as much instead of passing an old post
+off as today's.
+
+The blog is re-read every ten minutes, and the last answer is kept — a TV that
+loses the wifi keeps showing what it had, dated, rather than going blank.
+
+## Posting from Google Classroom
+
+If the material is already in Google Classroom, it does not have to be written
+twice. [`tools/classroom-to-blogger.gs`](tools/classroom-to-blogger.gs) is a
+Google Apps Script that runs in the teacher's own Google account, reads her
+active courses each morning, and writes one Blogger post per course — labelled
+with the course name, which is what lets the board match it to a period.
+
+The setup lives at **[`classroom-import.html`](classroom-import.html)**, linked
+from the app's own setup screen, so a teacher never has to come to GitHub for
+it: the page shows the script with a copy button, the manifest to paste beside
+it, and the six clicks in between. It reads the `.gs` file from the same folder
+rather than repeating it, so the page cannot drift away from the script it is
+handing out.
+
+The chain is Classroom → Blogger → board because Classroom keeps courses
+private behind OAuth, which a static page has no way to hold. Blogger is the
+part that can be public, so it is the part the board reads.
 
 ## Look and feel
 

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Google Classroom → Blogger</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/png" href="pioneer-icon.png">
+<style>
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 46px;
+    margin-bottom: 28px;
+  }
+  .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+    font-style: italic;
+    display: grid;
+    place-items: center;
+  }
+  .steps h2 { margin-top: 4px; }
+  .steps p { color: var(--muted); max-width: 62ch; }
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .code-name {
+    font-weight: 700;
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+  }
+  pre {
+    margin: 0;
+    padding: 14px;
+    max-height: 340px;
+    overflow: auto;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-2);
+    font-size: .8rem;
+    line-height: 1.45;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  kbd {
+    font: inherit;
+    font-weight: 700;
+    background: var(--surface-2);
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--line); }
+  th { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<main class="screen">
+  <header class="page-head">
+    <img class="crest" src="pioneer.png" alt="" width="820" height="575">
+    <div class="head-text">
+      <h1>Google Classroom → Blogger</h1>
+      <p class="lede">Post once in Classroom and let it appear on the classroom
+        board by itself.</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>How the pieces fit</h2>
+    <p class="hint" style="max-width:62ch">
+      The board cannot read Google Classroom directly — Classroom keeps your
+      courses private, and this page is just a web page with no server behind
+      it. Blogger is the bridge: a small script running in <em>your</em> Google
+      account copies each day's Classroom items onto your blog, and the board
+      reads the blog. Everything below happens in your own Google account. You
+      only do it once.
+    </p>
+    <p class="hint" style="max-width:62ch">
+      Prefer to just write the posts yourself? You do not need any of this —
+      post on your blog, and connect it in the app's <strong>Class blog</strong>
+      box.
+    </p>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <h2>Make sure the blog is public</h2>
+      <p>In Blogger, open <strong>Settings → Permissions → Reader access</strong>
+        and set it to <strong>Public</strong>. The board reads your blog the way
+        any visitor would, so a private blog is invisible to it.</p>
+    </li>
+
+    <li>
+      <h2>Start a script in your Google account</h2>
+      <p>Go to <a href="https://script.google.com/home/projects/create"
+        target="_blank" rel="noopener">script.google.com</a> and start a new
+        project. Give it a name like <em>Classroom to Blogger</em>. Delete the
+        few lines already in the editor.</p>
+    </li>
+
+    <li>
+      <h2>Paste the script</h2>
+      <p>Copy this and paste it into the empty editor. Then change the
+        <code>BLOG_URL</code> line near the top to your own blog's address, and
+        press <kbd>Save</kbd>.</p>
+      <div class="code-head">
+        <span class="code-name">Code.gs</span>
+        <button type="button" class="btn btn-small" data-copy="script">Copy the script</button>
+      </div>
+      <pre><code id="script-source">Loading…</code></pre>
+    </li>
+
+    <li>
+      <h2>Let it read Classroom</h2>
+      <p>In the left sidebar, next to <strong>Services</strong>, click
+        <strong>+</strong>. Choose <strong>Google Classroom API</strong> and
+        click <strong>Add</strong>. Leave the identifier as
+        <code>Classroom</code>.</p>
+    </li>
+
+    <li>
+      <h2>Let it write to Blogger</h2>
+      <p>Open <strong>Project Settings</strong> (the gear) and tick
+        <strong>Show "appsscript.json" manifest file in editor</strong>. Go back
+        to the editor, open <code>appsscript.json</code>, and replace what is
+        there with this. Change the time zone to yours if it differs, then save.</p>
+      <div class="code-head">
+        <span class="code-name">appsscript.json</span>
+        <button type="button" class="btn btn-small" data-copy="manifest">Copy the permissions</button>
+      </div>
+      <pre><code id="manifest-source">{
+  "timeZone": "America/Los_Angeles",
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Classroom",
+        "serviceId": "classroom",
+        "version": "v1"
+      }
+    ]
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.announcements.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+    "https://www.googleapis.com/auth/blogger",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/script.scriptapp"
+  ]
+}</code></pre>
+    </li>
+
+    <li>
+      <h2>Run it once, then set it to run every morning</h2>
+      <p>Pick <code>publishToBlogger</code> from the function menu at the top and
+        press <strong>Run</strong>. Google will ask you to allow it — that is it
+        asking for the permissions from the previous step, and it goes to your
+        script, not to anyone else. It will warn that the app is unverified;
+        choose <strong>Advanced → Go to (your project name)</strong>, since the
+        project is your own.</p>
+      <p>Check your blog: there should be one post per course. Then pick
+        <code>installDailyTrigger</code> from the same menu and press
+        <strong>Run</strong> once. From then on it posts on its own each morning
+        at about 6am.</p>
+    </li>
+
+    <li>
+      <h2>Connect the blog to the board</h2>
+      <p>Back in <a href="index.html">the schedule app</a>, open the setup screen
+        and paste your blog address into <strong>Class blog</strong>. That is the
+        last step — the board picks it up from there.</p>
+    </li>
+  </ol>
+
+  <div class="card">
+    <h2>Getting posts onto the right period</h2>
+    <p class="hint" style="max-width:62ch">
+      Each post carries a label, and the board puts a labelled post on the
+      matching period. The script labels every post with its Classroom course
+      name, so if your course names match the names you typed into the app, it
+      already lines up. Anything the board cannot match to a period shows as a
+      general announcement instead — which is what you want for a fire drill or
+      a reminder about picture day.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Blogger label</th><th>Where it lands</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Algebra I</code></td><td>The period you named "Algebra I"</td></tr>
+        <tr><td><code>Hour 3</code>, <code>3rd Hour</code>, <code>Period 3</code></td><td>All land on Hour 3</td></tr>
+        <tr><td><code>Instruction 2</code></td><td>The elementary block of that name</td></tr>
+        <tr><td>no label, or anything else</td><td>The announcements strip</td></tr>
+      </tbody>
+    </table>
+    <p class="hint" style="margin-top:14px;max-width:62ch">
+      If a course name does not match a period name, map it in the
+      <code>COURSE_LABELS</code> line near the top of the script.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>If something goes wrong</h2>
+    <p class="hint" style="max-width:62ch">
+      <strong>The board stays empty.</strong> Open your blog in a private window.
+      If you cannot see it without signing in, it is not public yet — step 1.
+    </p>
+    <p class="hint" style="max-width:62ch">
+      <strong>The script says it cannot find the blog.</strong> The
+      <code>BLOG_URL</code> line needs the address you actually visit, including
+      <code>https://</code>, and nothing after the host.
+    </p>
+    <p class="hint" style="max-width:62ch">
+      <strong>Nothing gets posted.</strong> The script only posts a course that
+      has an announcement from the last few days or an assignment due today or
+      tomorrow. Set <code>DRY_RUN = true</code> and run it again — the
+      <strong>Execution log</strong> will show what it found.
+    </p>
+    <p class="hint" style="max-width:62ch">
+      <strong>You want to stop it.</strong> Run <code>removeTriggers</code>, or
+      delete the script project. Removing the blog from the app's setup screen
+      stops the board reading it either way.
+    </p>
+  </div>
+
+  <p class="hint"><a href="index.html">← Back to the schedule</a></p>
+</main>
+
+<script>
+/* The script is served from the same folder, so the page shows the real file
+ * rather than a copy of it that could drift out of date. */
+(function () {
+  'use strict';
+
+  var SOURCE = 'tools/classroom-to-blogger.gs';
+  var target = document.getElementById('script-source');
+
+  fetch(SOURCE).then(function (response) {
+    if (!response.ok) throw new Error(response.status);
+    return response.text();
+  }).then(function (text) {
+    target.textContent = text;
+  }).catch(function () {
+    target.textContent =
+      'The script could not be loaded here. Open it directly at ' + SOURCE;
+  });
+
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-copy]');
+    if (!button) return;
+
+    var id = button.dataset.copy === 'script' ? 'script-source' : 'manifest-source';
+    var text = document.getElementById(id).textContent;
+    var original = button.textContent;
+
+    function done(message) {
+      button.textContent = message;
+      window.setTimeout(function () { button.textContent = original; }, 2000);
+    }
+
+    if (!navigator.clipboard) { done('Select it and copy'); return; }
+    navigator.clipboard.writeText(text)
+      .then(function () { done('Copied'); })
+      .catch(function () { done('Select it and copy'); });
+  });
+})();
+</script>
+</body>
+</html>
