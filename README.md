@@ -69,6 +69,25 @@ To re-theme, change the custom properties at the top of
 [`styles.css`](styles.css) — `--accent`, `--accent-deep`, `--accent-soft`,
 `--surface-2` — and swap `pioneer.png` and `pioneer-icon.png`.
 
+## Hosting it (GitHub Pages)
+
+There is nothing to build, so Pages can serve the repository directly. Turn it
+on once, in the repository's **Settings → Pages**:
+
+1. **Source** → *Deploy from a branch*
+2. **Branch** → the default branch, folder **`/ (root)`**
+3. **Save**
+
+The first build takes a minute or two, and every later push rebuilds it
+automatically. The site then lives at
+`https://<user>.github.io/classroom-schedule/`.
+
+This step needs a repository admin — the Actions token is not allowed to create
+a Pages site, so it cannot be scripted from a workflow.
+
+Serving it over `https` rather than opening the file locally is what lets the
+screen wake lock work, so the TV does not sleep on it.
+
 ## Putting it on a TV
 
 The live screen is built for a 10-foot read: at 1080p the countdown is about 220
@@ -79,7 +98,8 @@ without settings.
 - **Full screen** hides the browser chrome. `F` does the same from a keyboard or
   a remote with a keyboard.
 - The page asks for a screen wake lock so the TV does not sleep on it. That
-  needs a real `http(s)` origin — it is ignored when opened as a `file://` URL.
+  needs a real `http(s)` origin (see Hosting above) — it is ignored when the
+  page is opened as a `file://` URL.
 - Edges are padded well inside the frame so nothing lands in a TV's overscan.
 - The schedule column scrolls itself and keeps the current period centred, so a
   long day needs no attention.
