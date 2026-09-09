@@ -75,12 +75,19 @@ There is nothing to build, so Pages can serve the repository directly. Turn it
 on once, in the repository's **Settings → Pages**:
 
 1. **Source** → *Deploy from a branch*
-2. **Branch** → the default branch, folder **`/ (root)`**
+2. **Branch** → `main`, folder **`/ (root)`**
 3. **Save**
 
 The first build takes a minute or two, and every later push rebuilds it
 automatically. The site then lives at
-`https://<user>.github.io/classroom-schedule/`.
+**https://ameliamiddleton.github.io/classroom-schedule/**
+
+Note the repository name in the path. This is a *project* page, so the bare
+`ameliamiddleton.github.io` is a different site altogether and will 404.
+
+If saving the setting does not kick off a build, push any commit to `main` —
+that always triggers one. Progress shows in the repository's **Actions** tab as
+a *pages-build-deployment* run.
 
 This step needs a repository admin — the Actions token is not allowed to create
 a Pages site, so it cannot be scripted from a workflow.
