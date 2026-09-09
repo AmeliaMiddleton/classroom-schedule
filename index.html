@@ -76,6 +76,30 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2>Class blog</h2>
+      <p class="hint">Optional. Paste your Blogger address and the board shows
+        what you post there — general posts as announcements, and any post you
+        label with a period as that period's plan. The blog has to be public;
+        there is nothing to install.</p>
+
+      <div class="blog-connect">
+        <input type="url" id="blog-url" inputmode="url" autocomplete="off"
+               spellcheck="false" placeholder="msmiddleton.blogspot.com"
+               aria-label="Blogger address">
+        <button type="button" class="btn" data-action="connect-blog"
+                id="btn-connect-blog">Connect</button>
+        <button type="button" class="btn" data-action="disconnect-blog"
+                id="btn-disconnect-blog" hidden>Remove</button>
+      </div>
+
+      <p id="blog-status" class="blog-status" hidden></p>
+
+      <p class="hint blog-aside">Already posting in Google Classroom?
+        <a href="classroom-import.html" target="_blank" rel="noopener">Send
+        Classroom to Blogger automatically</a> instead of writing it twice.</p>
+    </div>
+
     <div class="actions">
       <button type="submit" class="btn btn-primary">Save &amp; start</button>
       <button type="button" class="btn" data-action="back-to-choose">Pick a different schedule</button>
@@ -132,11 +156,22 @@
       <h3 class="day-head">Today</h3>
       <ol id="day-list" class="day-list"></ol>
     </section>
+
+    <section class="board" id="board" hidden aria-live="polite">
+      <div class="board-head">
+        <span class="board-kind" id="board-kind"></span>
+        <span class="board-date" id="board-date"></span>
+      </div>
+      <h3 class="board-title" id="board-title"></h3>
+      <p class="board-text" id="board-text"></p>
+      <div class="board-dots" id="board-dots"></div>
+    </section>
   </div>
 </main>
 
 <script src="schedules.js"></script>
 <script src="sounds.js"></script>
+<script src="blogger.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

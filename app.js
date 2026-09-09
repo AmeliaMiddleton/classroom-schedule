@@ -11,8 +11,13 @@
     alarmOn: true,
     sound: 'chime',
     leadMinutes: 5,
-    volume: 0.8
+    volume: 0.8,
+    blogUrl: null,
+    blogTitle: null
   };
+
+  var BLOG_REFRESH_MS = 10 * 60 * 1000;   // the blog is not news; ten minutes is plenty
+  var BLOG_ROTATE_MS = 14000;             // long enough to read one from across the room
 
   var el = {
     screens: {
@@ -49,7 +54,17 @@
     nowRemainingLabel: document.getElementById('now-remaining-label'),
     nowProgress: document.getElementById('now-progress'),
     nowNext: document.getElementById('now-next'),
-    dayList: document.getElementById('day-list')
+    dayList: document.getElementById('day-list'),
+    blogUrlInput: document.getElementById('blog-url'),
+    btnConnectBlog: document.getElementById('btn-connect-blog'),
+    btnDisconnectBlog: document.getElementById('btn-disconnect-blog'),
+    blogStatus: document.getElementById('blog-status'),
+    board: document.getElementById('board'),
+    boardKind: document.getElementById('board-kind'),
+    boardDate: document.getElementById('board-date'),
+    boardTitle: document.getElementById('board-title'),
+    boardText: document.getElementById('board-text'),
+    boardDots: document.getElementById('board-dots')
   };
 
   var state = load();
@@ -194,6 +209,103 @@
     return timeline;
   }
 
+  /* --- the class blog -----------------------------------------------------
+   *
+   * Posts arrive as plain text with whatever labels the teacher put on them.
+   * A post labelled for a period is that period's plan; everything else is an
+   * announcement for the room. Blogger.js does the reading — this decides
+   * where each post belongs. */
+
+  var blog = { data: null, error: null, loading: false, timer: null };
+  var viewCache = { key: null, value: null };
+
+  function slug(text) {
+    return String(text == null ? '' : text).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  }
+
+  /* "Hour 3", "3rd Hour" and "Period 3" all mean the same period to a teacher,
+   * so they should mean the same thing to a label. A bare number does not
+   * count — "Chapter 5" is not a period. */
+  var PERIOD_WORDS = 'hour|period|block|class|instruction';
+
+  function periodNumber(text) {
+    var raw = String(text == null ? '' : text);
+    var match = new RegExp('(?:' + PERIOD_WORDS + ')\\s*#?\\s*(\\d{1,2})', 'i').exec(raw) ||
+      new RegExp('(\\d{1,2})\\s*(?:st|nd|rd|th)?\\s*(?:' + PERIOD_WORDS + ')', 'i').exec(raw);
+    return match ? parseInt(match[1], 10) : null;
+  }
+
+  /* A label lands on a period if it matches the schedule's name for it, the
+   * name the teacher typed, or the same period number. */
+  function labelMatchesPeriod(label, period, labels) {
+    var target = slug(label);
+    if (!target) return false;
+
+    var names = [period.name, labelKey(period), labelFor(period, labels)];
+    for (var i = 0; i < names.length; i++) {
+      if (slug(names[i]) === target) return true;
+    }
+
+    var wanted = periodNumber(period.name);
+    return wanted !== null && wanted === periodNumber(label);
+  }
+
+  function blogView(timeline) {
+    var key = (blog.data ? blog.data.fetchedAt : 0) + '|' + state.scheduleId + '|' +
+      state.lunchId + '|' + JSON.stringify(state.labels);
+    if (viewCache.key === key) return viewCache.value;
+
+    var view = { agendas: {}, announcements: [] };
+    var posts = (blog.data && blog.data.posts) || [];
+    var periods = timeline.filter(function (period) { return period.kind !== 'passing'; });
+
+    posts.forEach(function (post) {
+      var claimed = false;
+      periods.forEach(function (period) {
+        var hit = (post.labels || []).some(function (label) {
+          return labelMatchesPeriod(label, period, state.labels);
+        });
+        if (!hit) return;
+        claimed = true;
+        // The feed is newest first, so the first post to claim a period wins.
+        if (!view.agendas[labelKey(period)]) view.agendas[labelKey(period)] = post;
+      });
+      if (!claimed) view.announcements.push(post);
+    });
+
+    viewCache = { key: key, value: view };
+    return view;
+  }
+
+  function startBlog() {
+    stopBlog();
+    viewCache = { key: null, value: null };
+    if (!state || !state.blogUrl) { blog.data = null; return; }
+    // The last good copy first, so a reload never puts an empty board up while
+    // the network is being waited on.
+    blog.data = Blogger.cached(Blogger.normalize(state.blogUrl));
+    refreshBlog();
+    blog.timer = window.setInterval(refreshBlog, BLOG_REFRESH_MS);
+  }
+
+  function stopBlog() {
+    if (blog.timer) { window.clearInterval(blog.timer); blog.timer = null; }
+  }
+
+  function refreshBlog() {
+    if (!state || !state.blogUrl || blog.loading) return;
+    blog.loading = true;
+    Blogger.load(state.blogUrl, function (err, result) {
+      blog.loading = false;
+      // A failed refresh keeps the last copy on the board rather than clearing
+      // it — the date on each post is what says how old it is.
+      if (err) { blog.error = err; return; }
+      blog.error = null;
+      blog.data = result;
+      viewCache = { key: null, value: null };
+    });
+  }
+
   /* --- screens ----------------------------------------------------------- */
 
   function show(which) {
@@ -205,10 +317,14 @@
     if (which === 'live') {
       hideTools();
       warned = { periodId: null, prevRemaining: null };
+      startBlog();
+      startBoardRotation();
       tick();
       ticker = setInterval(tick, 1000);
       requestWakeLock();
     } else {
+      stopBlog();
+      stopBoardRotation();
       releaseWakeLock();
     }
     window.scrollTo(0, 0);
@@ -283,10 +399,13 @@
       alarmOn: state ? state.alarmOn : undefined,
       sound: state ? state.sound : undefined,
       leadMinutes: state ? state.leadMinutes : undefined,
-      volume: state ? state.volume : undefined
+      volume: state ? state.volume : undefined,
+      blogUrl: state ? state.blogUrl : null,
+      blogTitle: state ? state.blogTitle : null
     });
     renderSetup();
     renderAlarmSettings();
+    renderBlogSettings();
     show('setup');
   }
 
@@ -420,6 +539,63 @@
     });
   }
 
+  function renderBlogSettings() {
+    el.blogUrlInput.value = draft.blogUrl || '';
+    el.btnDisconnectBlog.hidden = !draft.blogUrl;
+    if (draft.blogUrl) {
+      setBlogStatus('ok', 'Showing posts from ' + (draft.blogTitle || draft.blogUrl) + '.');
+    } else {
+      setBlogStatus(null, '');
+    }
+  }
+
+  function setBlogStatus(kind, text) {
+    el.btnDisconnectBlog.hidden = !draft.blogUrl;
+    el.blogStatus.hidden = !kind;
+    el.blogStatus.textContent = text;
+    el.blogStatus.className = 'blog-status' +
+      (kind === 'ok' ? ' is-ok' : kind === 'error' ? ' is-error' : '');
+  }
+
+  function connectBlog() {
+    var typed = el.blogUrlInput.value.trim();
+    if (!typed) {
+      setBlogStatus('error', 'Paste your blog address first.');
+      return;
+    }
+
+    el.btnConnectBlog.disabled = true;
+    setBlogStatus('busy', 'Checking that blog\u2026');
+
+    Blogger.load(typed, function (err, result) {
+      el.btnConnectBlog.disabled = false;
+      if (err) {
+        setBlogStatus('error', err.message + ' A blog set to private cannot be read.');
+        return;
+      }
+      draft.blogUrl = result.origin;
+      draft.blogTitle = result.title;
+      el.blogUrlInput.value = result.origin;
+      setBlogStatus('ok', 'Connected to \u201c' + result.title + '\u201d \u00b7 ' +
+        result.posts.length + (result.posts.length === 1 ? ' post' : ' posts') + ' found.');
+    });
+  }
+
+  function disconnectBlog() {
+    draft.blogUrl = null;
+    draft.blogTitle = null;
+    el.blogUrlInput.value = '';
+    Blogger.forget();
+    setBlogStatus(null, '');
+  }
+
+  /* Enter in the address field means "connect", not "save and start". */
+  el.blogUrlInput.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    connectBlog();
+  });
+
   el.alarmOn.addEventListener('change', function () {
     draft.alarmOn = el.alarmOn.checked;
     el.alarmDetail.hidden = !draft.alarmOn;
@@ -448,7 +624,9 @@
       alarmOn: draft.alarmOn,
       sound: draft.sound,
       leadMinutes: draft.leadMinutes,
-      volume: draft.volume
+      volume: draft.volume,
+      blogUrl: draft.blogUrl,
+      blogTitle: draft.blogTitle
     });
     Sounds.unlock();   // this click is the gesture that lets audio play later
     show('live');
@@ -479,9 +657,11 @@
       }
     }
 
+    var view = blogView(timeline);
     checkAlarm(current, seconds);
     renderNow(current, next, seconds, timeline);
-    renderDay(timeline, seconds);
+    renderDay(timeline, seconds, view);
+    renderBoard(current, view);
   }
 
   /* Ring once, on the tick that crosses the warning line. Comparing against the
@@ -573,7 +753,7 @@
 
   var shownCurrentId = null;
 
-  function renderDay(timeline, seconds) {
+  function renderDay(timeline, seconds, view) {
     var currentItem = null;
     el.dayList.innerHTML = '';
     timeline.forEach(function (period) {
@@ -602,6 +782,15 @@
         label.appendChild(sub);
       }
 
+      // What the blog says is happening in this period, if anything.
+      var planned = period.kind === 'passing' ? null : view.agendas[labelKey(period)];
+      if (planned && planned.title) {
+        var agenda = document.createElement('span');
+        agenda.className = 'agenda';
+        agenda.textContent = planned.title;
+        label.appendChild(agenda);
+      }
+
       var len = document.createElement('span');
       len.className = 'len';
       len.textContent = formatLength(period);
@@ -620,6 +809,90 @@
       currentItem.scrollIntoView({ block: 'center' });
     }
     shownCurrentId = currentId;
+  }
+
+  /* --- the board strip ---------------------------------------------------
+   *
+   * One post at a time, big enough to read from a desk. The period's own plan
+   * comes first when there is one; the rest of the blog rotates behind it.
+   * Every post carries its date, so a board nobody has posted to in a fortnight
+   * says so rather than passing an old post off as today's. */
+
+  var BOARD_MAX_ANNOUNCEMENTS = 6;
+  var BOARD_MAX_CHARS = 260;
+  var boardIndex = 0;
+  var boardRotate = null;
+  var boardShown = null;
+
+  function startBoardRotation() {
+    stopBoardRotation();
+    boardIndex = 0;
+    boardShown = null;
+    // Only the counter moves here; the next tick paints it.
+    boardRotate = window.setInterval(function () { boardIndex += 1; }, BLOG_ROTATE_MS);
+  }
+
+  function stopBoardRotation() {
+    if (boardRotate) { window.clearInterval(boardRotate); boardRotate = null; }
+  }
+
+  function postDate(post) {
+    var when = post.published || post.updated;
+    if (!when) return '';
+    var today = new Date();
+    if (when.getFullYear() === today.getFullYear() &&
+        when.getMonth() === today.getMonth() &&
+        when.getDate() === today.getDate()) {
+      return 'Today';
+    }
+    return when.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function trimText(text, max) {
+    if (!text || text.length <= max) return text || '';
+    return text.slice(0, max).replace(/\s+\S*$/, '') + '\u2026';
+  }
+
+  function renderBoard(current, view) {
+    var items = [];
+    var plan = current && current.kind !== 'passing'
+      ? view.agendas[labelKey(current)]
+      : null;
+
+    if (plan) {
+      // The date sits on the right of the same line, so it does not belong here too.
+      items.push({ kind: labelFor(current, state.labels), post: plan });
+    }
+    view.announcements.slice(0, BOARD_MAX_ANNOUNCEMENTS).forEach(function (post) {
+      items.push({ kind: 'Announcement', post: post });
+    });
+
+    if (!items.length) {
+      el.board.hidden = true;
+      boardShown = null;
+      return;
+    }
+
+    if (boardIndex >= items.length) boardIndex = boardIndex % items.length;
+    var item = items[boardIndex];
+    var key = boardIndex + '/' + items.length + '/' + item.kind + '/' + item.post.id;
+    if (key === boardShown) return;
+    boardShown = key;
+
+    el.board.hidden = false;
+    el.boardKind.textContent = item.kind;
+    el.boardDate.textContent = postDate(item.post);
+    el.boardTitle.textContent = item.post.title || '(untitled post)';
+    el.boardText.textContent = trimText(item.post.text, BOARD_MAX_CHARS);
+    el.boardText.hidden = !item.post.text;
+
+    el.boardDots.innerHTML = '';
+    el.boardDots.hidden = items.length < 2;
+    for (var i = 0; i < items.length; i++) {
+      var dot = document.createElement('span');
+      dot.className = 'board-dot' + (i === boardIndex ? ' is-on' : '');
+      el.boardDots.appendChild(dot);
+    }
   }
 
   /* --- teacher controls --------------------------------------------------
@@ -711,7 +984,9 @@
   }
 
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && document.body.dataset.screen === 'live') requestWakeLock();
+    if (document.hidden || document.body.dataset.screen !== 'live') return;
+    requestWakeLock();
+    refreshBlog();
   });
 
   /* --- global actions ---------------------------------------------------- */
@@ -735,8 +1010,9 @@
       startSetup(state.scheduleId);
     } else if (action === 'change-schedule') {
       // This throws away the period names, so make it a deliberate choice.
-      if (!window.confirm('Start over? This clears your period names and alarm settings.')) return;
+      if (!window.confirm('Start over? This clears your period names, alarm settings and class blog.')) return;
       clearSaved();
+      Blogger.forget();
       renderChoose();
       show('choose');
     } else if (action === 'hide-tools') {
@@ -748,6 +1024,10 @@
       renderAlarmState();
     } else if (action === 'fullscreen') {
       toggleFullscreen();
+    } else if (action === 'connect-blog') {
+      connectBlog();
+    } else if (action === 'disconnect-blog') {
+      disconnectBlog();
     } else if (action === 'enable-sound') {
       Sounds.unlock();
       window.setTimeout(function () {

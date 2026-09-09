@@ -536,14 +536,102 @@ body[data-screen="live"] { overflow: hidden; }
 .day-list li.is-passing { background: transparent; border-style: dashed; }
 .day-list li.is-passing .label { color: var(--muted); }
 
+/* --- class blog, on the setup screen ------------------------------------ */
+
+.blog-connect { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.blog-connect input {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.blog-connect input:focus-visible { border-color: var(--accent); }
+.blog-status {
+  margin: 12px 0 0;
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--muted);
+}
+.blog-status.is-ok { color: var(--accent); }
+.blog-status.is-error { color: var(--warn); }
+.blog-aside { margin: 16px 0 0; }
+.blog-aside a { color: var(--accent); }
+
+/* --- the board strip, on the live screen -------------------------------- */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: clamp(10px, 1.4vh, 20px) clamp(14px, 1.4vw, 26px);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  background: var(--accent-soft);
+  /* Capped, so a long post never squeezes the countdown off the screen. */
+  max-height: clamp(96px, 20vh, 240px);
+  overflow: hidden;
+}
+.board-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: clamp(.68rem, .85vw, 1rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--accent-deep);
+}
+.board-date { color: var(--muted); white-space: nowrap; }
+.board-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.1vw, 2.6rem);
+  line-height: 1.15;
+  color: var(--accent-deep);
+}
+.board-text {
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  font-weight: 700;
+  color: var(--muted);
+  font-size: clamp(.85rem, 1.15vw, 1.45rem);
+  line-height: 1.35;
+}
+.board-dots { display: flex; gap: 6px; margin-top: auto; padding-top: 6px; }
+.board-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: .3;
+}
+.board-dot.is-on { opacity: 1; }
+
+/* What the blog says is planned for a period, under its name in the day list. */
+.day-list .agenda {
+  display: block;
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 700;
+  font-size: .78em;
+}
+.day-list li.is-past .agenda { color: var(--muted); }
+
 /* Wide screens — a TV, a projector, a desktop — put the day beside the clock. */
 @media (min-width: 1000px) and (min-height: 500px) {
   .live-grid {
-    grid-template-rows: none;
+    /* One explicit row only: the board's row is implicit, so it costs no gap
+       on the days nothing has been posted. */
+    grid-template-rows: minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 620px);
     align-items: stretch;
     gap: clamp(16px, 2vw, 32px);
   }
+  .board { grid-column: 1 / -1; }
 }
 
 @media (max-width: 560px) {
